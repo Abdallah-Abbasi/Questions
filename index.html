@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="ar">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>اختبار الذكاءات المتعددة</title>
+    <!-- Google Font for Arabic -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* Reset default styles */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            direction: rtl;
+            background: linear-gradient(135deg, #74ABE2, #5563DE);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+            padding: 20px;
+        }
+
+        .container {
+            background: #fff;
+            width: 100%;
+            max-width: 600px;
+            border-radius: 10px;
+            padding: 30px 40px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+            transition: transform 0.3s ease;
+        }
+
+        .container:hover {
+            transform: scale(1.02);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #5563DE;
+        }
+
+        .question-container {
+            margin-top: 20px;
+            min-height: 150px;
+            position: relative;
+        }
+
+        .question-text {
+            font-size: 22px;
+            margin-bottom: 25px;
+            line-height: 1.4;
+        }
+
+        .options label {
+            display: block;
+            margin-bottom: 15px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            padding: 10px 15px;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+
+        .options label:hover {
+            background-color: #e0e0e0;
+        }
+
+        .options input[type="radio"] {
+            margin-left: 10px;
+            transform: scale(1.2);
+            vertical-align: middle;
+        }
+
+        .navigation {
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        .navigation button {
+            padding: 12px 25px;
+            font-size: 18px;
+            margin: 0 8px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: #5563DE;
+            color: #fff;
+            transition: background-color 0.3s ease;
+        }
+
+        .navigation button:hover {
+            background-color: #3f4bb8;
+        }
+
+        .navigation button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f2f2f2;
+            border-radius: 8px;
+            font-size: 20px;
+            line-height: 1.6;
+            text-align: center;
+            animation: fadeIn 0.6s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>اختبار الذكاءات المتعددة</h1>
+        <div id="quiz">
+            <!-- A single question is displayed at a time -->
+            <div class="question-container">
+                <div id="questionText" class="question-text"></div>
+                <div id="options" class="options"></div>
+            </div>
+            <div class="navigation">
+                <button id="prevBtn" style="display:none;">السابق</button>
+                <button id="nextBtn">التالي</button>
+            </div>
+        </div>
+        <div id="result" class="result" style="display:none;"></div>
+    </div>
+
+    <script>
+        /***********************
+         * Utility: Shuffle Array
+         * Fisher–Yates algorithm.
+         ***********************/
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        /***********************
+         * Define Questions
+         * 48 questions total (6 per category).
+         * Each question object has:
+         *  - question: text (Arabic)
+         *  - category: index 0-7
+         *  - yesValue / noValue: custom numeric values
+         ***********************/
+        const questions = [
+            // Category 1: الذكاء اللغوي (اللفظي) -- yes: 1, no: 2
+            { question: "هل تجد نفسك تستمتع بكتابة القصص أو المقالات أو الشعر؟", category: 0, yesValue: 1, noValue: 2 },
+            { question: "هل لديك قدرة على تعلم لغات جديدة بسهولة؟", category: 0, yesValue: 1, noValue: 2 },
+            { question: "هل تفضل تدوين ملاحظات مكتوبة عند التعلم؟", category: 0, yesValue: 1, noValue: 2 },
+            { question: "هل تحب قراءة الكتب والمقالات بانتظام؟", category: 0, yesValue: 1, noValue: 2 },
+            { question: "هل تجد سهولة في التعبير عن أفكارك بشكل واضح؟", category: 0, yesValue: 1, noValue: 2 },
+            { question: "هل تستمتع بالمشاركة في النقاشات والمحادثات المعمقة؟", category: 0, yesValue: 1, noValue: 2 },
+
+            // Category 2: الذكاء المنطقي-الرياضي -- yes: 3, no: 4
+            { question: "هل تحب حل الألغاز المنطقية أو المسائل الرياضية؟", category: 1, yesValue: 3, noValue: 4 },
+            { question: "هل تستمتع بتحليل البيانات أو التعرف على الأنماط؟", category: 1, yesValue: 3, noValue: 4 },
+            { question: "هل تحب تجربة الفرضيات لمعرفة النتائج؟", category: 1, yesValue: 3, noValue: 4 },
+            { question: "هل تستمتع بتحدي نفسك بحل المشاكل المعقدة؟", category: 1, yesValue: 3, noValue: 4 },
+            { question: "هل تجيد استخدام المنطق في حياتك اليومية؟", category: 1, yesValue: 3, noValue: 4 },
+            { question: "هل تفضل البحث عن حلول مبتكرة للمشكلات؟", category: 1, yesValue: 3, noValue: 4 },
+
+            // Category 3: الذكاء البصري-المكاني -- yes: 5, no: 6
+            { question: "هل تعتمد على الصور أو الخرائط الذهنية عند التعلم؟", category: 2, yesValue: 5, noValue: 6 },
+            { question: "هل يمكنك تخيل الأشكال ثلاثية الأبعاد بسهولة؟", category: 2, yesValue: 5, noValue: 6 },
+            { question: "هل تحب الرسم أو التصميم أو التصوير الفوتوغرافي؟", category: 2, yesValue: 5, noValue: 6 },
+            { question: "هل تجد سهولة في تذكر التفاصيل المرئية؟", category: 2, yesValue: 5, noValue: 6 },
+            { question: "هل تحب ترتيب الأشياء بطريقة منظمة وجميلة؟", category: 2, yesValue: 5, noValue: 6 },
+            { question: "هل تستمتع بمشاهدة الأفلام والفنون التشكيلية؟", category: 2, yesValue: 5, noValue: 6 },
+
+            // Category 4: الذكاء الجسدي-الحركي -- yes: 7, no: 8
+            { question: "هل تفضل التعلم عن طريق التجربة العملية بدلاً من القراءة فقط؟", category: 3, yesValue: 7, noValue: 8 },
+            { question: "هل تجد نفسك تتعلم بشكل أفضل عندما تتحرك أو تمارس أنشطة جسدية؟", category: 3, yesValue: 7, noValue: 8 },
+            { question: "هل تستمتع بالرياضة أو الرقص أو التمثيل؟", category: 3, yesValue: 7, noValue: 8 },
+            { question: "هل تشعر بالراحة عند أداء المهام اليدوية؟", category: 3, yesValue: 7, noValue: 8 },
+            { question: "هل تستمتع بالتحديات الجسدية والنشاطات الخارجية؟", category: 3, yesValue: 7, noValue: 8 },
+            { question: "هل تجد أن نشاطك البدني يساعدك على التفكير بشكل أوضح؟", category: 3, yesValue: 7, noValue: 8 },
+
+            // Category 5: الذكاء الموسيقي -- yes: 9, no: 10
+            { question: "هل يمكنك تمييز النغمات أو الإيقاعات بسهولة؟", category: 4, yesValue: 9, noValue: 10 },
+            { question: "هل تستمتع بالاستماع إلى الموسيقى أثناء الدراسة أو العمل؟", category: 4, yesValue: 9, noValue: 10 },
+            { question: "هل تجد نفسك تتذكر المعلومات بشكل أفضل عند تحويلها إلى أغنية؟", category: 4, yesValue: 9, noValue: 10 },
+            { question: "هل لديك القدرة على عزف آلة موسيقية؟", category: 4, yesValue: 9, noValue: 10 },
+            { question: "هل تشعر بتأثير الموسيقى على مزاجك بشكل واضح؟", category: 4, yesValue: 9, noValue: 10 },
+            { question: "هل تستمتع بتأليف أو تأدية الأغاني؟", category: 4, yesValue: 9, noValue: 10 },
+
+            // Category 6: الذكاء الاجتماعي -- yes: 11, no: 12
+            { question: "هل تجد أنه من السهل عليك فهم مشاعر الآخرين؟", category: 5, yesValue: 11, noValue: 12 },
+            { question: "هل تستمتع بالعمل الجماعي أكثر من العمل الفردي؟", category: 5, yesValue: 11, noValue: 12 },
+            { question: "هل لديك قدرة على إقناع الآخرين أو حل النزاعات بينهم؟", category: 5, yesValue: 11, noValue: 12 },
+            { question: "هل تجد سهولة في التواصل مع الآخرين؟", category: 5, yesValue: 11, noValue: 12 },
+            { question: "هل تشعر بأنك متعاطف مع مشاعر الآخرين؟", category: 5, yesValue: 11, noValue: 12 },
+            { question: "هل تحب المشاركة في الأنشطة الاجتماعية؟", category: 5, yesValue: 11, noValue: 12 },
+
+            // Category 7: الذكاء الشخصي (الذاتي) -- yes: 13, no: 14
+            { question: "هل تقضي وقتًا في التفكير في مشاعرك وأهدافك الشخصية؟", category: 6, yesValue: 13, noValue: 14 },
+            { question: "هل لديك وعي عالٍ بنقاط قوتك وضعفك؟", category: 6, yesValue: 13, noValue: 14 },
+            { question: "هل تفضل العمل بمفردك بدلاً من العمل الجماعي؟", category: 6, yesValue: 13, noValue: 14 },
+            { question: "هل تستمتع بتأمل أفكارك ومشاعرك بعمق؟", category: 6, yesValue: 13, noValue: 14 },
+            { question: "هل تجد أنك تفهم نفسك بشكل جيد؟", category: 6, yesValue: 13, noValue: 14 },
+            { question: "هل تحب تحديد أهدافك ومراقبة تقدمك الشخصي؟", category: 6, yesValue: 13, noValue: 14 },
+
+            // Category 8: الذكاء الطبيعي (البيئي) -- yes: 15, no: 16
+            { question: "هل تستمتع بقضاء الوقت في الطبيعة؟", category: 7, yesValue: 15, noValue: 16 },
+            { question: "هل تجد نفسك مهتمًا بالحيوانات والنباتات والتوازن البيئي؟", category: 7, yesValue: 15, noValue: 16 },
+            { question: "هل لديك قدرة على تمييز أنواع النباتات أو الطيور المختلفة؟", category: 7, yesValue: 15, noValue: 16 },
+            { question: "هل تشعر بالارتباط مع البيئة المحيطة بك؟", category: 7, yesValue: 15, noValue: 16 },
+            { question: "هل تستمتع بمراقبة التغيرات في الطبيعة؟", category: 7, yesValue: 15, noValue: 16 },
+            { question: "هل تجد متعة في دراسة الظواهر الطبيعية؟", category: 7, yesValue: 15, noValue: 16 }
+        ];
+
+        // Shuffle the questions for a random order each session.
+        shuffleArray(questions);
+
+        // Array to store user answers (same length as questions).
+        const answers = new Array(questions.length).fill(null);
+        let currentQuestionIndex = 0;
+
+        // Cache DOM elements.
+        const questionTextEl = document.getElementById('questionText');
+        const optionsEl = document.getElementById('options');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const resultEl = document.getElementById('result');
+
+        // Render the current question.
+        function renderQuestion() {
+            optionsEl.innerHTML = ''; // Clear previous options.
+            const currentQuestion = questions[currentQuestionIndex];
+            questionTextEl.textContent = currentQuestion.question;
+            const name = "q" + currentQuestionIndex;
+
+            // Create radio button options for "Yes" and "No".
+            const yesLabel = document.createElement('label');
+            const yesInput = document.createElement('input');
+            yesInput.type = 'radio';
+            yesInput.name = name;
+            yesInput.value = currentQuestion.yesValue;
+            yesInput.required = true;
+            yesLabel.appendChild(yesInput);
+            yesLabel.appendChild(document.createTextNode(" نعم"));
+
+            const noLabel = document.createElement('label');
+            const noInput = document.createElement('input');
+            noInput.type = 'radio';
+            noInput.name = name;
+            noInput.value = currentQuestion.noValue;
+            noLabel.appendChild(noInput);
+            noLabel.appendChild(document.createTextNode(" لا"));
+
+            optionsEl.appendChild(yesLabel);
+            optionsEl.appendChild(noLabel);
+
+            // Restore previous answer if available.
+            if (answers[currentQuestionIndex] !== null) {
+                const radios = document.getElementsByName(name);
+                radios.forEach(radio => {
+                    if (parseInt(radio.value, 10) === answers[currentQuestionIndex]) {
+                        radio.checked = true;
+                    }
+                });
+            }
+
+            // Update navigation buttons.
+            prevBtn.style.display = currentQuestionIndex === 0 ? 'none' : 'inline-block';
+            nextBtn.textContent = (currentQuestionIndex === questions.length - 1) ? "إرسال" : "التالي";
+        }
+
+        // Record the answer for the current question.
+        function recordAnswer() {
+            const name = "q" + currentQuestionIndex;
+            const radios = document.getElementsByName(name);
+            for (let radio of radios) {
+                if (radio.checked) {
+                    answers[currentQuestionIndex] = parseInt(radio.value, 10);
+                    break;
+                }
+            }
+        }
+
+        // Navigation event handlers.
+        prevBtn.addEventListener('click', () => {
+            recordAnswer();
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                renderQuestion();
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            recordAnswer();
+            if (answers[currentQuestionIndex] === null) {
+                alert("الرجاء اختيار إجابة للمتابعة.");
+                return;
+            }
+            if (currentQuestionIndex === questions.length - 1) {
+                calculateResults();
+            } else {
+                currentQuestionIndex++;
+                renderQuestion();
+            }
+        });
+
+        /************************************
+         * Calculate and Display Results:
+         * 1. For each category, compute a base score using:
+         *      base = ((worstScore - total) / (worstScore - bestScore)) * 100
+         *    (Here, bestScore = yesValue * 6 and worstScore = noValue * 6)
+         * 2. Among all 8 categories, sort by base score descending.
+         * 3. Take the top three categories and normalize their scores so that they
+         *    sum exactly to 100%. (This means:
+         *       normalized[i] = (base[i] / sum(top three bases)) * 100 )
+         * 4. Adjust the highest category (if needed) so that the rounded percentages sum to 100.
+         ************************************/
+        function calculateResults() {
+            // Define the 8 categories (each with fixed yes/no values).
+            const categories = [
+                { name: "الذكاء اللغوي (اللفظي)", yesValue: 1, noValue: 2, total: 0, base: 0 },
+                { name: "الذكاء المنطقي-الرياضي", yesValue: 3, noValue: 4, total: 0, base: 0 },
+                { name: "الذكاء البصري-المكاني", yesValue: 5, noValue: 6, total: 0, base: 0 },
+                { name: "الذكاء الجسدي-الحركي", yesValue: 7, noValue: 8, total: 0, base: 0 },
+                { name: "الذكاء الموسيقي", yesValue: 9, noValue: 10, total: 0, base: 0 },
+                { name: "الذكاء الاجتماعي", yesValue: 11, noValue: 12, total: 0, base: 0 },
+                { name: "الذكاء الشخصي (الذاتي)", yesValue: 13, noValue: 14, total: 0, base: 0 },
+                { name: "الذكاء الطبيعي (البيئي)", yesValue: 15, noValue: 16, total: 0, base: 0 }
+            ];
+
+            // Sum answers for each category (using the question.category field).
+            questions.forEach((q, index) => {
+                const catIndex = q.category;
+                categories[catIndex].total += answers[index];
+            });
+
+            // For each category, compute the base score.
+            categories.forEach(cat => {
+                const numQuestions = 6; // Each category has 6 questions.
+                const bestScore = cat.yesValue * numQuestions;
+                const worstScore = cat.noValue * numQuestions;
+                // Base score: 100 if all "Yes", 0 if all "No".
+                cat.base = ((worstScore - cat.total) / (worstScore - bestScore)) * 100;
+            });
+
+            // Sort categories by base score descending.
+            categories.sort((a, b) => b.base - a.base);
+
+            // Take the top three categories.
+            const topThree = categories.slice(0, 3);
+            const sumTopBases = topThree.reduce((sum, cat) => sum + cat.base, 0);
+
+            // Compute normalized percentages (so that top three sum to 100).
+            let normalized = topThree.map(cat => Math.round((cat.base / sumTopBases) * 100));
+            const totalNormalized = normalized.reduce((a, b) => a + b, 0);
+            // Adjust the highest category's percentage if rounding error exists.
+            if (totalNormalized !== 100) {
+                normalized[0] += (100 - totalNormalized);
+            }
+
+            // Build results HTML.
+            let resultsHTML = `<p>أعلى ثلاث نتائج (موزعة من 100%):</p><ol>`;
+            topThree.forEach((cat, index) => {
+                resultsHTML += `<li>${cat.name}: ${normalized[index]}%</li>`;
+            });
+            resultsHTML += `</ol>`;
+
+            // Hide quiz and display results.
+            document.getElementById('quiz').style.display = 'none';
+            resultEl.innerHTML = resultsHTML;
+            resultEl.style.display = 'block';
+        }
+
+        // Start the quiz with the first (shuffled) question.
+        renderQuestion();
+    </script>
+</body>
+
+</html>
